@@ -48,6 +48,9 @@ services:
       - "9000:9000"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
+    environment:
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: letmein123
     healthcheck:
       test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
       interval: 5s
@@ -68,7 +71,17 @@ services:
       - ./migrations/:/flyway/sql
     environment:
       FLYWAY_CONNECT_RETRIES: 10
-
+  etl:
+      image: python:3.13-slim
+      container_name: task_etl
+      working_dir: /app
+      volumes:
+        - ./solution:/app
+      command: >
+        sh -c "pip install pandas numpy duckdb clickhouse-connect && python /app/etl.py"
+      depends_on:
+        - postgres
+        - clickhouse
 volumes:
   postgres_data:
   clickhouse_data:
